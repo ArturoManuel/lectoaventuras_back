@@ -1,10 +1,10 @@
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { User } from './models/user.model';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
-import { AuthResponse } from './interfaces/auth.interface';
-import { AppError } from '../../shared/utils/app-error';
-import { logger } from '../../shared/utils/logger';
+import jwt, { type Secret, type SignOptions } from 'jsonwebtoken';
+import { User } from './models/user.model.js';
+import { LoginDto, RegisterDto } from './dto/auth.dto.js';
+import { AuthResponse, RefreshTokenPayload } from './interfaces/auth.interface.js';
+import { AppError } from '../../shared/utils/app-error.js';
+import { logger } from '../../shared/utils/logger.js';
 
 export class AuthService {
   private readonly JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -36,14 +36,10 @@ export class AuthService {
     // TODO: Save refresh token to database
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 
+    const { password: _ignoredPassword, ...userProfile } = user;
+
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role
-      },
+      user: userProfile,
       ...tokens
     };
   }
@@ -78,14 +74,10 @@ export class AuthService {
     // TODO: Save refresh token to database
     await this.saveRefreshToken(newUser.id, tokens.refreshToken);
 
+    const { password: _ignoredPassword2, ...newUserProfile } = newUser;
+
     return {
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        role: newUser.role
-      },
+      user: newUserProfile,
       ...tokens
     };
   }
@@ -95,7 +87,7 @@ export class AuthService {
    */
   async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const decoded = jwt.verify(refreshToken, this.JWT_REFRESH_SECRET) as any;
+      const decoded = jwt.verify(refreshToken, this.JWT_REFRESH_SECRET) as RefreshTokenPayload;
       
       // TODO: Verify refresh token exists in database
       const isValidRefreshToken = await this.verifyRefreshToken(decoded.userId, refreshToken);
@@ -125,7 +117,7 @@ export class AuthService {
    */
   async logout(refreshToken: string): Promise<void> {
     try {
-      const decoded = jwt.verify(refreshToken, this.JWT_REFRESH_SECRET) as any;
+      const decoded = jwt.verify(refreshToken, this.JWT_REFRESH_SECRET) as RefreshTokenPayload;
       
       // TODO: Remove refresh token from database
       await this.removeRefreshToken(decoded.userId, refreshToken);
@@ -157,14 +149,14 @@ export class AuthService {
       role: user.role
     };
 
-    const accessToken = jwt.sign(payload, this.JWT_SECRET, {
-      expiresIn: this.JWT_EXPIRES_IN
-    });
+    const accessToken = jwt.sign(payload, this.JWT_SECRET as Secret, {
+      expiresIn: this.JWT_EXPIRES_IN,
+    } as SignOptions);
 
     const refreshToken = jwt.sign(
       { userId: user.id },
-      this.JWT_REFRESH_SECRET,
-      { expiresIn: this.JWT_REFRESH_EXPIRES_IN }
+      this.JWT_REFRESH_SECRET as Secret,
+      { expiresIn: this.JWT_REFRESH_EXPIRES_IN } as SignOptions,
     );
 
     return { accessToken, refreshToken };

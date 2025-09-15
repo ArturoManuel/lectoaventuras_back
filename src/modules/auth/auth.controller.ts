@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service.js';
-import { LoginDto, RegisterDto } from './dto/auth.dto.js';
+import { LoginDto, RegisterDto, RefreshTokenDto } from './dto/auth.dto.js';
 import { ApiResponse } from '../../shared/interfaces/api-response.interface.js';
 import { logger } from '../../shared/utils/logger.js';
+import { AppError } from '../../shared/utils/app-error.js';
 
 export class AuthController {
   private authService: AuthService;
@@ -58,7 +59,7 @@ export class AuthController {
    */
   refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { refreshToken } = req.body;
+      const { refreshToken } = req.body as RefreshTokenDto;
       const result = await this.authService.refreshToken(refreshToken);
       
       const response: ApiResponse = {
@@ -98,6 +99,9 @@ export class AuthController {
   getProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user?.id;
+      if (!userId) {
+        throw new AppError('Not authenticated', 401);
+      }
       const result = await this.authService.getProfile(userId);
       
       const response: ApiResponse = {

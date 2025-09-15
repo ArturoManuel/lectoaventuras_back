@@ -24,6 +24,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Swagger Docs
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+// Raw Swagger JSON (for debugging)
+app.get('/api/docs.json', (req: Request, res: Response) => {
+  res.json(swaggerSpec);
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
