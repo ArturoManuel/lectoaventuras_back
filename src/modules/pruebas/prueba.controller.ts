@@ -10,7 +10,7 @@ export class PruebaController {
   getAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await this.pruebaService.getAll();
-      const response: ApiResponse = { success: true, message: 'Tests retrieved', data: result };
+      const response: ApiResponse = { success: true, data: result };
       res.status(200).json(response);
     } catch (e) { next(e); }
   };

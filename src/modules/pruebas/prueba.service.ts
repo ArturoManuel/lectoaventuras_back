@@ -1,11 +1,15 @@
-import { Prueba } from './models/prueba.model.js';
+import type { Prueba } from './models/prueba.model.js';
 import { CreatePruebaDto, UpdatePruebaDto } from './dto/prueba.dto.js';
 import { AppError } from '../../shared/utils/app-error.js';
+import { firestore } from '../../shared/firebase.js';
 
 export class PruebaService {
-  async getAll(): Promise<Prueba[]> {
-    // TODO: DB fetch
-    return [];
+  async getAll(): Promise<any[]> {
+    // Firestore fetch: read all documents from 'quizzes' collection
+    const db = firestore();
+    const snapshot = await db.collection('quizzes').get();
+    const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return items;
   }
 
   async getById(id: string): Promise<Prueba> {

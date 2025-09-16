@@ -8,12 +8,28 @@ import { createPruebaSchema, updatePruebaSchema } from './validators/prueba.vali
 const router = Router();
 const controller = new PruebaController();
 
-router.use(authenticateToken);
-
 router.get('/', controller.getAll);
 router.get('/:id', controller.getById);
-router.post('/', authorizeRoles(['teacher', 'admin']), validateRequest(createPruebaSchema), controller.create);
-router.put('/:id', authorizeRoles(['teacher', 'admin']), validateRequest(updatePruebaSchema), controller.update);
-router.delete('/:id', authorizeRoles(['teacher', 'admin']), controller.remove);
+// Protected write routes
+router.post(
+  '/',
+  authenticateToken,
+  authorizeRoles(['teacher', 'admin']),
+  validateRequest(createPruebaSchema),
+  controller.create,
+);
+router.put(
+  '/:id',
+  authenticateToken,
+  authorizeRoles(['teacher', 'admin']),
+  validateRequest(updatePruebaSchema),
+  controller.update,
+);
+router.delete(
+  '/:id',
+  authenticateToken,
+  authorizeRoles(['teacher', 'admin']),
+  controller.remove,
+);
 
 export { router as pruebaRoutes };

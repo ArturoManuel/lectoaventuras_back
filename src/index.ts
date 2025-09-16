@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'node:path';
+import fs from 'node:fs';
 import swaggerUi from 'swagger-ui-express';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { aulaRoutes } from './modules/aulas/aula.routes.js';
@@ -10,9 +12,14 @@ import { errorHandler } from './shared/middleware/error.middleware.js';
 import { logger } from './shared/utils/logger.js';
 import { swaggerSpec, swaggerUiOptions } from './shared/docs/swagger.js';
 import type { Request, Response } from 'express';
+import { initFirebase } from './shared/firebase.js';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables (prefer custom file, fallback to .env)
+const envPath = fs.existsSync(path.resolve('back_lectoaventuras.env'))? path.resolve('back_lectoaventuras.env') : path.resolve('.env');
+dotenv.config({ path: envPath });
+
+// Initialize Firebase Admin (uses GOOGLE_APPLICATION_CREDENTIALS or ADC)
+initFirebase();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
