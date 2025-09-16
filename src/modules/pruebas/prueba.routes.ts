@@ -8,7 +8,49 @@ import { createPruebaSchema, updatePruebaSchema } from './validators/prueba.vali
 const router = Router();
 const controller = new PruebaController();
 
+/**
+ * @openapi
+ * /api/pruebas:
+ *   get:
+ *     summary: Listar lecciones/pruebas
+ *     description: Retorna el resumen de pruebas con su progreso por aula.
+ *     tags:
+ *       - Pruebas
+ *     responses:
+ *       200:
+ *         description: Lista de pruebas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/PruebaLessons'
+ */
 router.get('/', controller.getAll);
+
+/**
+ * @openapi
+ * /api/pruebas/{id}:
+ *   get:
+ *     summary: Obtener una prueba por ID
+ *     tags:
+ *       - Pruebas
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Prueba encontrada
+ *       404:
+ *         description: No encontrada
+ */
 router.get('/:id', controller.getById);
 // Protected write routes
 router.post(

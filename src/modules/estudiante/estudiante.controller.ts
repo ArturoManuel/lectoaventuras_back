@@ -9,7 +9,15 @@ export class EstudianteController {
 
   getAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const data = await this.service.getAll();
+      const aulasParam = (req.query.aulas as string | undefined) || '';
+      const nameParam = (req.query.name as string | undefined) || '';
+      const codes = aulasParam
+        ? aulasParam.split(',').map((c) => c.trim()).filter(Boolean)
+        : [];
+
+      const data = (codes.length || nameParam)
+        ? await this.service.search({ name: nameParam, classrooms: codes })
+        : await this.service.getAll();
       const response: ApiResponse = { success: true, message: 'Students retrieved', data };
       res.status(200).json(response);
     } catch (e) { next(e); }

@@ -38,18 +38,10 @@ app.get('/api/docs.json', (req: Request, res: Response) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/aulas', aulaRoutes);
-app.use('/api/pruebas', pruebaRoutes);
-app.use('/api/estudiantes', estudianteRoutes);
+app.use('/api/aula', aulaRoutes);
+app.use('/api/prueba', pruebaRoutes);
+app.use('/api/estudiante', estudianteRoutes);
 
-// Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    message: 'LectoAventuras Backend is running',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // Error handling middleware
 app.use(errorHandler);
@@ -62,9 +54,9 @@ app.use('*', (req: Request, res: Response) => {
   });
 });
 
+// Start HTTP server (plain Express)
 app.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);
-  logger.info(`Health check available at http://localhost:${PORT}/health`);
   logger.info(`API docs available at http://localhost:${PORT}/api/docs`);
 });
 

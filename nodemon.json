@@ -1,0 +1,6 @@
+{
+  "watch": ["src", ".env", "back_lectoaventuras.env"],
+  "ext": "ts,js,json,env",
+  "exec": "node --import tsx src/index.ts",
+  "legacyWatch": true
+}
