@@ -16,6 +16,13 @@ const controller = new PruebaController();
  *     description: Retorna el resumen de pruebas con su progreso por aula.
  *     tags:
  *       - Pruebas
+ *     parameters:
+ *       - in: query
+ *         name: aula
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: "uuid_classroom para filtrar las pruebas del aula."
  *     responses:
  *       200:
  *         description: Lista de pruebas
@@ -28,7 +35,9 @@ const controller = new PruebaController();
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/PruebaLessons'
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/PruebaLessons'
  */
 router.get('/', controller.getAll);
 

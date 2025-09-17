@@ -9,7 +9,9 @@ export class PruebaController {
 
   getAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await this.pruebaService.getAll();
+      const aula = (req.query.aula as string | undefined)?.trim();
+      if (!aula) throw new AppError('Query parameter "aula" (uuid_classroom) is required', 400);
+      const result = await this.pruebaService.getByClassroom(aula);
       const response: ApiResponse = { success: true, data: result };
       res.status(200).json(response);
     } catch (e) { next(e); }

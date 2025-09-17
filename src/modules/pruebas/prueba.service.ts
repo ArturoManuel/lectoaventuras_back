@@ -69,6 +69,63 @@ export class PruebaService {
     return enriched.map(mapQuizToDto);
   }
 
+  async getByClassroom(uuid_classroom: string): Promise<any[]> {
+    const db = firestore();
+    const snapshot = await db
+      .collection(QUIZZES_COLLECTION)
+      .where('uuid_classroom', '==', uuid_classroom)
+      .get();
+    const quizzes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
+
+    const getEnrollCount = async (uuid_classroom_inner: string): Promise<number> => {
+      const agg = await db
+        .collection(ENROLLMENTS_COLLECTION)
+        .where('uuid_classroom', '==', uuid_classroom_inner)
+        .count()
+        .get();
+      return agg.data().count;
+    };
+
+    const getResultsCount = async (uuid_test: string, uuid_classroom_inner: string): Promise<number> => {
+      const agg = await db
+        .collection(RESULTS_COLLECTION)
+        .where('uuid_test', '==', uuid_test)
+        .where('uuid_classroom', '==', uuid_classroom_inner)
+        .count()
+        .get();
+      return agg.data().count;
+    };
+
+    const enrolled = await getEnrollCount(uuid_classroom);
+
+    const enriched = await Promise.all(
+      quizzes.map(async (q) => {
+        const lessons = Array.isArray(q.lessons) ? q.lessons : [];
+        const lessonsWithCounts = await Promise.all(
+          lessons.map(async (l: any) => {
+            const uuid_test: string = l.uuid_test;
+            const completed = await getResultsCount(uuid_test, uuid_classroom);
+            const due_date_iso = toIsoDate(l.due_date);
+            return {
+              ...l,
+              cant_complet: completed,
+              ...(due_date_iso ? { due_date: due_date_iso } : {}),
+            };
+          })
+        );
+
+        const enrichedQuiz = {
+          ...q,
+          total_student: enrolled,
+          lessons: lessonsWithCounts,
+        };
+        return enrichedQuiz;
+      })
+    );
+
+    return enriched.map(mapQuizToDto);
+  }
+
   async getById(id: string): Promise<Prueba> {
     // TODO: DB fetch
     const prueba = null as any as Prueba | null;
