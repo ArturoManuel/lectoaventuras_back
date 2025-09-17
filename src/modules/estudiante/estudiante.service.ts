@@ -7,6 +7,7 @@ import { fromFirestore as mapStudentFs } from './mapper/mapper_studen.js';
 // Static collection used for students
 const STUDENTS_COLLECTION = 'users';
 
+
 export class EstudianteService {
   async getAll(): Promise<Estudiante[]> {
     const db = firestore();

@@ -10,7 +10,7 @@ const controller = new PruebaController();
 
 /**
  * @openapi
- * /api/pruebas:
+ * /api/prueba:
  *   get:
  *     summary: Listar lecciones/pruebas
  *     description: Retorna el resumen de pruebas con su progreso por aula.
@@ -34,7 +34,7 @@ router.get('/', controller.getAll);
 
 /**
  * @openapi
- * /api/pruebas/{id}:
+ * /api/prueba/{id}:
  *   get:
  *     summary: Obtener una prueba por ID
  *     tags:

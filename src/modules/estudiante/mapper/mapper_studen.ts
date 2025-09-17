@@ -7,6 +7,10 @@ export function fromFirestore(docData: any): Student {
   const toDate = (v: any): Date | null => {
     if (!v) return null;
     if (v instanceof Timestamp) return v.toDate();
+    if (typeof v._seconds === 'number') {
+      const ms = v._seconds * 1000 + Math.floor((v._nanoseconds || 0) / 1_000_000);
+      return new Date(ms);
+    }
     if (typeof v === 'string' || v instanceof Date) return new Date(v);
     return null;
   };

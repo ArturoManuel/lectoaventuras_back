@@ -30,22 +30,22 @@ const openapiDefinition = {
           cant_complet: { type: 'integer', example: 25 },
           due_date: { type: 'string', format: 'date-time', example: '2025-09-13T14:30:53.000Z' },
           name_test: { type: 'string', example: 'Compresión Lectora Nivel 1' },
-          total_student: { type: 'integer', example: 40 },
           uuid_test: { type: 'string', example: 'asdljsalkdjaasdk' },
         },
-        required: ['cant_complet', 'due_date', 'name_test', 'total_student', 'uuid_test'],
+        required: ['cant_complet', 'due_date', 'name_test', 'uuid_test'],
       },
       PruebaLessons: {
         type: 'object',
         properties: {
           uuid: { type: 'string', example: '3zfZHIzeFUz6G8ue7mED' },
           uuid_classroom: { type: 'string', example: 'EST-25-AGL001' },
+          total_student: { type: 'integer', example: 40 },
           lessons: {
             type: 'array',
             items: { $ref: '#/components/schemas/PruebaLessonItem' },
           },
         },
-        required: ['uuid', 'uuid_classroom', 'lessons'],
+        required: ['uuid', 'uuid_classroom', 'total_student', 'lessons'],
       },
       Student: {
         type: 'object',
