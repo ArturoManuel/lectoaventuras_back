@@ -2,7 +2,9 @@ name: Deploy Node.js to AWS EC2
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - "main"
+      - "develop"
 
 jobs:
   deploy:
@@ -20,23 +22,58 @@ jobs:
     - name: 3. Agregar fingerprint del servidor
       run: ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-    - name: 4. Sincronizar archivos al servidor
+    - name: 4. Definir carpeta de despliegue
+      id: vars
       run: |
-        rsync -avz --exclude 'node_modules' --exclude '.git' --exclude '.github' ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/electroschock
+        if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+          echo "DEPLOY_DIR=production" >> $GITHUB_ENV
+        else
+          echo "DEPLOY_DIR=staging" >> $GITHUB_ENV
+        fi
 
-    - name: 5. Ejecutar comandos en EC2
+    - name: 5. Sincronizar archivos al servidor
+      run: |
+        rsync -avz \
+          --exclude 'node_modules' \
+          --exclude '.git' \
+          --exclude '.github' \
+          ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.DEPLOY_DIR }}
+
+    - name: 6. Ejecutar comandos en EC2
       run: |
         ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          set -e
+          
+          # Instalar NVM si no existe
           export NVM_DIR="$HOME/.nvm"
+          if [ ! -d "$NVM_DIR" ]; then
+            echo "Instalando NVM..."
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+          fi
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-          cd /home/ubuntu/electroschock
+          # Instalar Node.js v20 si no existe
+          if ! command -v node >/dev/null 2>&1; then
+            echo "Instalando Node.js..."
+            nvm install 20
+            nvm alias default 20
+          fi
 
+          # Instalar PM2 global si no existe
+          if ! command -v pm2 >/dev/null 2>&1; then
+            echo "Instalando PM2..."
+            npm install -g pm2
+          fi
+
+          # Ir a la carpeta del proyecto
+          cd /home/ec2-user/${DEPLOY_DIR}
+
+          # Instalar dependencias
           npm install
 
-          # Usar PM2 con el nombre correcto
-          pm2 restart index.js --name "electroshok" || pm2 start index.js --name "electroshok" --watch
+          # Reiniciar o iniciar la app con PM2 (nombre dinámico según carpeta)
+          pm2 restart index.js --name "${DEPLOY_DIR}" || pm2 start index.js --name "${DEPLOY_DIR}" --watch
 
-          # Guardar el estado de PM2
+          # Guardar el estado de PM2 (para reinicios)
           pm2 save
         EOF
