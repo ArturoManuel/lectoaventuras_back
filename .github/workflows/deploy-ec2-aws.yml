@@ -22,7 +22,7 @@ jobs:
 
     - name: 4. Sincronizar archivos al servidor
       run: |
-        rsync -avz --exclude 'node_modules' --exclude '.git' --exclude '.github' ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/back_lectoaventuras
+        rsync -avz --exclude 'node_modules' --exclude '.git' --exclude '.github' ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/back_lectoaventuras/
 
     - name: 5. Ejecutar comandos en EC2
       run: |
@@ -30,12 +30,21 @@ jobs:
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-          cd /home/ubuntu/back_lectoaventuras
+          cd /home/ec2-user/back_lectoaventuras
 
           npm install
 
-          # Usar PM2 con el nombre correcto
-          pm2 restart index.js --name "back_lectoaventuras" || pm2 start index.js --name "back_lectoaventuras" --watch
+          # Compilar TypeScript si es necesario
+          npm run build 2>/dev/null || true
+
+          # Usar PM2 con el archivo correcto (dist/index.js o src/index.ts dependiendo de tu configuración)
+          if [ -f "dist/index.js" ]; then
+            pm2 restart dist/index.js --name "back_lectoaventuras" || pm2 start dist/index.js --name "back_lectoaventuras"
+          elif [ -f "src/index.ts" ]; then
+            pm2 restart src/index.ts --name "back_lectoaventuras" --interpreter ts-node || pm2 start src/index.ts --name "back_lectoaventuras" --interpreter ts-node
+          else
+            pm2 restart index.js --name "back_lectoaventuras" || pm2 start index.js --name "back_lectoaventuras"
+          fi
 
           # Guardar el estado de PM2
           pm2 save
