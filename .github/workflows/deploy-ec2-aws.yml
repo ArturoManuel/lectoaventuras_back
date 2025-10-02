@@ -11,69 +11,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 1. Checkout del código
+    - name: 1) Checkout del código
       uses: actions/checkout@v4
 
-    - name: 2. Configurar SSH
+    - name: 2) Configurar SSH (llave privada)
       uses: webfactory/ssh-agent@v0.9.0
       with:
         ssh-private-key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
 
-    - name: 3. Agregar fingerprint del servidor
+    - name: 3) Confiar en el host de EC2
       run: ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-    - name: 4. Definir carpeta de despliegue
-      id: vars
-      run: |
-        if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
-          echo "DEPLOY_DIR=production" >> $GITHUB_ENV
-        else
-          echo "DEPLOY_DIR=staging" >> $GITHUB_ENV
-        fi
+    - name: 4) Crear carpeta remota si no existe
+      run: ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p /home/ec2-user/back_lectoaventuras"
 
-    - name: 5. Sincronizar archivos al servidor
+    - name: 5) Sincronizar archivos al servidor
       run: |
         rsync -avz \
           --exclude 'node_modules' \
           --exclude '.git' \
           --exclude '.github' \
-          ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.DEPLOY_DIR }}
+          ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/back_lectoaventuras
 
-    - name: 6. Ejecutar comandos en EC2
+    - name: 6) Ejecutar comandos en EC2
       run: |
         ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
           set -e
-          
-          # Instalar NVM si no existe
+
+          # --- NVM / Node.js ---
           export NVM_DIR="$HOME/.nvm"
           if [ ! -d "$NVM_DIR" ]; then
-            echo "Instalando NVM..."
+            echo "[INFO] Instalando NVM..."
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
           fi
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-          # Instalar Node.js v20 si no existe
           if ! command -v node >/dev/null 2>&1; then
-            echo "Instalando Node.js..."
+            echo "[INFO] Instalando Node.js v20..."
             nvm install 20
             nvm alias default 20
+          else
+            echo "[INFO] Node.js ya instalado"
+            nvm use 20 || nvm install 20
           fi
 
-          # Instalar PM2 global si no existe
+          # --- PM2 ---
           if ! command -v pm2 >/dev/null 2>&1; then
-            echo "Instalando PM2..."
+            echo "[INFO] Instalando PM2..."
             npm install -g pm2
+          else
+            echo "[INFO] PM2 ya instalado"
           fi
 
-          # Ir a la carpeta del proyecto
-          cd /home/ec2-user/${DEPLOY_DIR}
+          # --- Proyecto ---
+          cd /home/ec2-user/back_lectoaventuras
 
-          # Instalar dependencias
-          npm install
+          echo "[INFO] Instalando dependencias..."
+          npm ci || npm install
 
-          # Reiniciar o iniciar la app con PM2 (nombre dinámico según carpeta)
-          pm2 restart index.js --name "${DEPLOY_DIR}" || pm2 start index.js --name "${DEPLOY_DIR}" --watch
+          echo "[INFO] Iniciando app con PM2..."
+          pm2 restart index.js --name "back_lectoaventuras" || pm2 start index.js --name "back_lectoaventuras" --watch
 
-          # Guardar el estado de PM2 (para reinicios)
           pm2 save
         EOF
